@@ -78,7 +78,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DES-Cracker.cpp" />
+    <ClCompile Include="DES-Cracker_bitset.cpp" />
+    <ClCompile Include="DES-Cracker_uint64.cpp" />
+    <ClCompile Include="Experiment.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>

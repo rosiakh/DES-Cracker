@@ -1,5 +1,4 @@
 #include "DES-Cracker.h"
-#include <iostream>
 
 const int E[48] = {
 	32, 1, 2, 3, 4, 5,
@@ -124,20 +123,20 @@ template <typename T>
 void print_bitset(T bitset, int bits, std::string label)
 {
 	std::cout << label << ": ";
-	for (int i = 0; i < bits;++i)
+	for (int i = 0; i < bits; ++i)
 	{
 		std::cout << bitset[i];
 	}
 	std::cout << std::endl;
 }
 
-inline std::bitset<28> rotate_left28(std::bitset<28>& b, unsigned m)
+inline std::bitset<28> rotate_left28(std::bitset<28> b, unsigned m)
 {
 	return b >> m | b << (28 - m);
 }
 
-inline std::bitset<28> rotate_right28(std::bitset<28>& b, unsigned m)
-{	
+inline std::bitset<28> rotate_right28(std::bitset<28> b, unsigned m)
+{
 	return b << m | b >> (28 - m);
 }
 
@@ -162,7 +161,7 @@ std::bitset<32> f(std::bitset<32> data, std::bitset<48> key)
 	{
 		for (j = 0; j < 6; ++j)
 		{
-			B[i-1][j] = result[(i - 1) * 6 + j];
+			B[i - 1][j] = result[(i - 1) * 6 + j];
 		}
 		//print_bitset(B[i-1], 6, "B_" + std::to_string(i));
 	}
@@ -173,20 +172,20 @@ std::bitset<32> f(std::bitset<32> data, std::bitset<48> key)
 
 	for (i = 1; i <= 8; ++i)
 	{
-		r = 2 * B[i-1][0] + B[i-1][5];
-		c = 8 * B[i-1][1] + 4 * B[i-1][2] + 2 * B[i-1][3] + B[i-1][4];
+		r = 2 * B[i - 1][0] + B[i - 1][5];
+		c = 8 * B[i - 1][1] + 4 * B[i - 1][2] + 2 * B[i - 1][3] + B[i - 1][4];
 
 		temp = std::bitset<4>(S[i - 1][r][c]);
 		for (j = 0; j < 4; ++j)
 		{
-			SB[i-1][j] = temp[3 - j];
+			SB[i - 1][j] = temp[3 - j];
 		}
 	}
 
-	for (i = 1; i <= 8; ++i)
-	{
+	//for (i = 1; i <= 8; ++i)
+	//{
 		//print_bitset(SB[i-1], 4, "SB_" + std::to_string(i));
-	}
+	//}
 
 	std::bitset<32> SBconcat;
 	for (i = 0; i < 32; ++i)
@@ -214,7 +213,7 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 
 	//print_bitset(K0, 64, "Key");
 
-	int i;
+	int i, b;
 	std::bitset<56> Kplus;
 	for (i = 0; i < 56; ++i)
 	{
@@ -240,25 +239,25 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 		D[i] = rotate_left28(D[i - 1], shifts[i - 1]);
 	}
 
-	for (i = 1; i <= 16; ++i)
-	{
-		//print_bitset(C[i], 28, "C_" + std::to_string(i));
-		//print_bitset(D[i], 28, "D_" + std::to_string(i));
-	}
+	//for (i = 1; i <= 16; ++i)
+	//{
+	//print_bitset(C[i], 28, "C_" + std::to_string(i));
+	//print_bitset(D[i], 28, "D_" + std::to_string(i));
+	//}
 
 	std::bitset<48> K[16];
 	for (i = 1; i <= 16; ++i)
 	{
-		for (int b = 0; b < 48; ++b)
+		for (b = 0; b < 48; ++b)
 		{
-			K[i-1][b] = PC2[b]>28 ? D[i][PC2[b] - 29] : C[i][PC2[b] - 1];
+			K[i - 1][b] = PC2[b]>28 ? D[i][PC2[b] - 29] : C[i][PC2[b] - 1];
 		}
 	}
 
-	for (i = 1; i <= 16; ++i)
-	{
-		//print_bitset(K[i-1], 48, "K_" + std::to_string(i));
-	}
+	//for (i = 1; i <= 16; ++i)
+	//{
+	//print_bitset(K[i-1], 48, "K_" + std::to_string(i));
+	//}
 
 	//STEP 2: Encode each 64-bit block of data
 
@@ -283,7 +282,7 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 	for (i = 1; i <= 16; ++i)
 	{
 		L[i] = R[i - 1];
-		R[i] = L[i - 1] ^ f(R[i - 1], K[i-1]);
+		R[i] = L[i - 1] ^ f(R[i - 1], K[i - 1]);
 		//print_bitset(L[i], 32, "L_" + std::to_string(i));
 		//print_bitset(R[i], 32, "R_" + std::to_string(i));
 	}

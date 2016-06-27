@@ -18,7 +18,13 @@
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DES-Cracker.cpp">
+    <ClCompile Include="DES-Cracker_uint64.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DES-Cracker_bitset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Experiment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
