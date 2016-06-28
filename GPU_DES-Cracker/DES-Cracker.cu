@@ -14,7 +14,7 @@ static __device__ __constant__ int E[48] = {
 static __device__ __constant__ int P[32] = {
 	16, 7, 20, 21,
 	29, 12, 28, 17,
-	1, 5, 23, 26,
+	1, 15, 23, 26,
 	5, 18, 31, 10,
 	2, 8, 24, 14,
 	32, 27, 3, 9,
@@ -215,7 +215,7 @@ static __device__ __constant__ int shifts[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 
 	return f_res;
 }
 
- __device__ uint64_t encrypt(uint64_t M, uint64_t K0)
+ __device__ uint64_t encrypt_no_permutations(uint64_t M, uint64_t K0)
  {
 	 //STEP 1: Create 16 subkeys, each of which is 48-bits long
 
@@ -254,19 +254,15 @@ static __device__ __constant__ int shifts[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 
 		 }
 	 }
 
-	 uint64_t IP = 0LL;
-	 for (i = 1; i <= 64; ++i)
-	 {
-		 set_bit(IP, i, get_bit(M, IP_tab[i - 1]));
-	 }
+	 //STEP 2: Encode each 64-bit block of data
 
 	 uint64_t L[17], R[17];
 	 L[0] = 0LL;
 	 R[0] = 0LL;
 	 for (i = 1; i <= 32; ++i)
 	 {
-		 set_bit(L[0], i, get_bit(IP, i));
-		 set_bit(R[0], i, get_bit(IP, 32 + i));
+		 set_bit(L[0], i, get_bit(M, i));
+		 set_bit(R[0], i, get_bit(M, 32 + i));
 	 }
 
 	 for (i = 1; i <= 16; ++i)
@@ -283,6 +279,20 @@ static __device__ __constant__ int shifts[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 
 		 set_bit(R16L16, i, i <= 32 ? get_bit(R[16], i) : get_bit(L[16], i - 32));
 	 }
 
+	 return R16L16;
+ }
+
+ __device__ uint64_t encrypt(uint64_t M, uint64_t K0)
+ {
+	 int i;
+	 uint64_t IP = 0LL;
+	 for (i = 1; i <= 64; ++i)
+	 {
+		 set_bit(IP, i, get_bit(M, IP_tab[i - 1]));
+	 }
+
+	 uint64_t R16L16 = encrypt_no_permutations(IP, K0);
+
 	 uint64_t result = 0LL;
 	 for (i = 1; i <= 64; ++i)
 	 {
@@ -297,6 +307,19 @@ static __device__ __constant__ int shifts[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 
 	 int tid = blockDim.x * blockIdx.x + threadIdx.x;
 	 uint64_t try_key = base_key + tid;
 	 uint64_t try_ciphertext = encrypt(plaintext, try_key);
+
+	 if (try_ciphertext == ciphertext)
+	 {
+		 *is_found_key = true;
+		 *result = try_key;
+	 }
+ }
+
+ __global__ void check_keys_no_permutations(uint64_t plaintext_no_permutations, uint64_t base_key, uint64_t ciphertext, uint64_t *result, bool *is_found_key)
+ {
+	 int tid = blockDim.x * blockIdx.x + threadIdx.x;
+	 uint64_t try_key = base_key + tid;
+	 uint64_t try_ciphertext = encrypt_no_permutations(plaintext_no_permutations, try_key);
 
 	 if (try_ciphertext == ciphertext)
 	 {

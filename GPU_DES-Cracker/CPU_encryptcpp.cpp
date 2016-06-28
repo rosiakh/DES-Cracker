@@ -1,4 +1,6 @@
 #include "DES-Cracker.cuh"
+#define PRINT_F 0
+#define PRINT_MAIN 0
 
 const int E[48] = {
 	32, 1, 2, 3, 4, 5,
@@ -14,7 +16,7 @@ const int E[48] = {
 const int P[32] = {
 	16, 7, 20, 21,
 	29, 12, 28, 17,
-	1, 5, 23, 26,
+	1, 15, 23, 26,
 	5, 18, 31, 10,
 	2, 8, 24, 14,
 	32, 27, 3, 9,
@@ -167,11 +169,15 @@ namespace CPU_namespace{
 			set_bit(E_data, i, get_bit(data, E[i - 1]));
 		}
 
-		//print_uint64_t(E_data, 48, "E(R)");
+#if PRINT_F
+		print_uint64_t(E_data, 48, "E(R)", 6);
+#endif
 
 		uint64_t result = E_data^key;
 
-		//print_uint64_t(result, 48, "E(R)+K");
+#if PRINT_F
+		print_uint64_t(result, 48, "E(R)+K", 6);
+#endif
 
 		uint64_t B[8];
 
@@ -182,7 +188,10 @@ namespace CPU_namespace{
 			{
 				set_bit(B[i - 1], j, get_bit(result, (i - 1) * 6 + j));
 			}
-			//print_uint64_t(B[i - 1], 6, "B_" + std::to_string(i));
+
+#if PRINT_F
+			print_uint64_t(B[i - 1], 6, "B_" + std::to_string(i));
+#endif
 		}
 
 		uint64_t SB[80];
@@ -202,10 +211,12 @@ namespace CPU_namespace{
 			}
 		}
 
-		/*for (i = 1; i <= 8; ++i)
+#if PRINT_F
+		for (i = 1; i <= 8; ++i)
 		{
-		print_uint64_t(SB[i - 1], 4, "SB_" + std::to_string(i));
-		}*/
+			print_uint64_t(SB[i - 1], 4, "SB_" + std::to_string(i));
+		}
+#endif
 
 		uint64_t SBconcat = 0LL;
 		for (i = 1; i <= 8; ++i)
@@ -215,7 +226,9 @@ namespace CPU_namespace{
 		}
 		SBconcat = SBconcat << 32;
 
-		//print_uint64_t(SBconcat, 32, "SBconcat");
+#if PRINT_F
+		print_uint64_t(SBconcat, 32, "SBconcat");
+#endif
 
 		uint64_t f_res = 0LL;
 		for (i = 1; i <= 32; ++i)
@@ -223,16 +236,22 @@ namespace CPU_namespace{
 			set_bit(f_res, i, get_bit(SBconcat, P[i - 1]));
 		}
 
-		//print_uint64_t(f_res, 32, "f_res");
+#if PRINT_F
+		print_uint64_t(f_res, 32, "f_res");
+#endif
+
 		return f_res;
 	}
 
+	//without initial and final permutation
 	//M - plaintext; K - key
-	uint64_t encrypt(uint64_t M, uint64_t K0)
+	uint64_t encrypt_no_permutations(uint64_t M, uint64_t K0)
 	{
 		//STEP 1: Create 16 subkeys, each of which is 48-bits long
 
-		//print_uint64_t(K0, 64, "Key");
+#if PRINT_MAIN
+		print_uint64_t(K0, 64, "Key", 8);
+#endif
 
 		int i, b;
 		uint64_t Kplus = 0LL;
@@ -241,7 +260,9 @@ namespace CPU_namespace{
 			set_bit(Kplus, i, get_bit(K0, PC1[i - 1]));
 		}
 
-		//print_uint64_t(Kplus, 56, "K+");
+#if PRINT_MAIN
+		print_uint64_t(Kplus, 56, "K+", 7);
+#endif
 
 		uint64_t C[17], D[17];
 
@@ -261,15 +282,13 @@ namespace CPU_namespace{
 			D[i] = rotate_left_28(D[i - 1], shifts[i - 1]);
 		}
 
-		/*for (i = 0; i <= 16; ++i)
-		{
-		print_uint64_t(C[i], 28, "C_" + std::to_string(i));
-		}
-
+#if PRINT_MAIN
 		for (i = 0; i <= 16; ++i)
 		{
-		print_uint64_t(D[i], 28, "D_" + std::to_string(i));
-		}*/
+			print_uint64_t(C[i], 28, "C_" + std::to_string(i));
+			print_uint64_t(D[i], 28, "D_" + std::to_string(i));
+		}
+#endif
 
 		uint64_t K[16];
 		for (i = 1; i <= 16; ++i)
@@ -281,32 +300,28 @@ namespace CPU_namespace{
 			}
 		}
 
-		/*for (i = 1; i <= 16; ++i)
+#if PRINT_MAIN
+		for (i = 1; i <= 16; ++i)
 		{
-		print_uint64_t(K[i - 1], 48, "K_" + std::to_string(i));
-		}*/
+			print_uint64_t(K[i - 1], 48, "K_" + std::to_string(i), 6);
+		}
+#endif
 
 		//STEP 2: Encode each 64-bit block of data
-
-		uint64_t IP = 0LL;
-		for (i = 1; i <= 64; ++i)
-		{
-			set_bit(IP, i, get_bit(M, IP_tab[i - 1]));
-		}
-
-		//print_uint64_t(IP, 64, "IP");
 
 		uint64_t L[17], R[17];
 		L[0] = 0LL;
 		R[0] = 0LL;
 		for (i = 1; i <= 32; ++i)
 		{
-			set_bit(L[0], i, get_bit(IP, i));
-			set_bit(R[0], i, get_bit(IP, 32 + i));
+			set_bit(L[0], i, get_bit(M, i));
+			set_bit(R[0], i, get_bit(M, 32 + i));
 		}
 
-		//print_uint64_t(L[0], 32, "L_0");
-		//print_uint64_t(R[0], 32, "R_0");
+#if PRINT_MAIN
+		print_uint64_t(L[0], 32, "L_0", 4);
+		print_uint64_t(R[0], 32, "R_0", 4);
+#endif
 
 		for (i = 1; i <= 16; ++i)
 		{
@@ -314,8 +329,11 @@ namespace CPU_namespace{
 			R[i] = 0LL;
 			L[i] = R[i - 1];
 			R[i] = L[i - 1] ^ f(R[i - 1], K[i - 1]);
-			//print_uint64_t(L[i], 32, "L_" + std::to_string(i));
-			//print_uint64_t(R[i], 32, "R_" + std::to_string(i));
+
+#if PRINT_MAIN
+			print_uint64_t(L[i], 32, "L_" + std::to_string(i), 4);
+			print_uint64_t(R[i], 32, "R_" + std::to_string(i), 4);
+#endif
 		}
 
 		uint64_t R16L16 = 0LL;
@@ -323,15 +341,55 @@ namespace CPU_namespace{
 		{
 			set_bit(R16L16, i, i <= 32 ? get_bit(R[16], i) : get_bit(L[16], i - 32));
 		}
-		//print_uint64_t(R16L16, 64, "R_16_L_16");
 
+#if PRINT_MAIN
+		print_uint64_t(R16L16, 64, "R_16_L_16", 8);
+#endif
+
+		return R16L16;
+	}
+
+	uint64_t permute_IP(uint64_t bits)
+	{
+		int i;
+		uint64_t IP = 0LL;
+		for (i = 1; i <= 64; ++i)
+		{
+			set_bit(IP, i, get_bit(bits, IP_tab[i - 1]));
+		}
+
+		return IP;
+	}
+
+	uint64_t permute_IPminus(uint64_t bits)
+	{
+		int i;
 		uint64_t result = 0LL;
 		for (i = 1; i <= 64; ++i)
 		{
-			set_bit(result, i, get_bit(R16L16, IPminus[i - 1]));
+			set_bit(result, i, get_bit(bits, IPminus[i - 1]));
 		}
 
-		//print_uint64_t(result, 64, "IP-1");
+		return result;
+	}
+
+	//M - plaintext; K - key
+	uint64_t encrypt(uint64_t M, uint64_t K0)
+	{
+		uint64_t IP = permute_IP(M);
+
+#if PRINT_MAIN
+		print_uint64_t(IP, 64, "IP", 4);
+#endif
+
+		uint64_t R16L16 = encrypt_no_permutations(IP, K0);
+		
+		uint64_t result = permute_IPminus(R16L16);
+
+#if PRINT_MAIN
+		print_uint64_t(result, 64, "IP-1", 8);
+#endif
+
 		return result;
 	}
 }

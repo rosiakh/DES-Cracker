@@ -19,6 +19,14 @@ __device__ uint64_t set_bit(uint64_t& bits, uint32_t pos, uint32_t value);
 
 __global__ void check_keys(uint64_t plaintext, uint64_t base_key, uint64_t ciphertext, uint64_t *result, bool *is_found_key);
 
+__global__ void check_keys_no_permutations(uint64_t plaintext_no_permutations, uint64_t base_key, uint64_t ciphertext, uint64_t *result, bool *is_found_key);
+
 namespace CPU_namespace{
 	uint64_t encrypt(uint64_t M, uint64_t K0);
+
+	uint64_t permute_IPminus(uint64_t bits);
+
+	uint64_t permute_IP(uint64_t bits);
+
+	uint64_t encrypt_no_permutations(uint64_t M, uint64_t K0);
 }
