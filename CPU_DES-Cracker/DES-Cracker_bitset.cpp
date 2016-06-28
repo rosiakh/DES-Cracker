@@ -1,4 +1,6 @@
 #include "DES-Cracker.h"
+#define PRINT_F 0
+#define PRINT_MAIN 0
 
 const int E[48] = {
 	32, 1, 2, 3, 4, 5,
@@ -14,7 +16,7 @@ const int E[48] = {
 const int P[32] = {
 	16, 7, 20, 21,
 	29, 12, 28, 17,
-	1, 5, 23, 26,
+	1, 15, 23, 26,
 	5, 18, 31, 10,
 	2, 8, 24, 14,
 	32, 27, 3, 9,
@@ -149,11 +151,15 @@ std::bitset<32> f(std::bitset<32> data, std::bitset<48> key)
 		E_data[i] = data[E[i] - 1];
 	}
 
-	//print_bitset(E_data, 48, "E(R)");
+#if PRINT_F
+	print_bitset(E_data, 48, "E(R)");
+#endif
 
 	std::bitset<48> result = E_data^key;
 
-	//print_bitset(result, 48, "E(R)+K");
+#if PRINT_F
+	print_bitset(result, 48, "E(R)+K");
+#endif
 
 	std::bitset<6> B[8];
 
@@ -163,7 +169,10 @@ std::bitset<32> f(std::bitset<32> data, std::bitset<48> key)
 		{
 			B[i - 1][j] = result[(i - 1) * 6 + j];
 		}
-		//print_bitset(B[i-1], 6, "B_" + std::to_string(i));
+
+#if PRINT_F
+		print_bitset(B[i-1], 6, "B_" + std::to_string(i));
+#endif
 	}
 
 	std::bitset<4> SB[8];
@@ -182,10 +191,12 @@ std::bitset<32> f(std::bitset<32> data, std::bitset<48> key)
 		}
 	}
 
-	//for (i = 1; i <= 8; ++i)
-	//{
-		//print_bitset(SB[i-1], 4, "SB_" + std::to_string(i));
-	//}
+#if PRINT_F
+	for (i = 1; i <= 8; ++i)
+	{
+		print_bitset(SB[i-1], 4, "SB_" + std::to_string(i));
+	}
+#endif
 
 	std::bitset<32> SBconcat;
 	for (i = 0; i < 32; ++i)
@@ -193,7 +204,9 @@ std::bitset<32> f(std::bitset<32> data, std::bitset<48> key)
 		SBconcat[i] = SB[i / 4][i % 4];
 	}
 
-	//print_bitset(SBconcat, 32, "SBconcat");
+#if PRINT_F
+	print_bitset(SBconcat, 32, "SBconcat");
+#endif
 
 	std::bitset<32> f_res;
 	for (i = 0; i < 32; ++i)
@@ -201,7 +214,9 @@ std::bitset<32> f(std::bitset<32> data, std::bitset<48> key)
 		f_res[i] = SBconcat[P[i] - 1];
 	}
 
-	//print_bitset(f_res, 32, "f_res");
+#if PRINT_F
+	print_bitset(f_res, 32, "f_res");
+#endif
 
 	return f_res;
 }
@@ -211,7 +226,9 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 {
 	//STEP 1: Create 16 subkeys, each of which is 48-bits long
 
-	//print_bitset(K0, 64, "Key");
+#if PRINT_MAIN
+	print_bitset(K0, 64, "Key");
+#endif
 
 	int i, b;
 	std::bitset<56> Kplus;
@@ -220,7 +237,9 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 		Kplus[i] = K0[PC1[i] - 1];
 	}
 
-	//print_bitset(Kplus, 56, "K+");
+#if PRINT_MAIN
+	print_bitset(Kplus, 56, "K+");
+#endif
 
 	std::bitset<28> C[17], D[17];
 
@@ -230,20 +249,23 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 		D[0][i] = Kplus[28 + i];
 	}
 
-	//print_bitset(C[0], 28, "C_0");
-	//print_bitset(D[0], 28, "D_0");
-
+#if PRINT_MAIN
+	print_bitset(C[0], 28, "C_0");
+	print_bitset(D[0], 28, "D_0");
+#endif
 	for (i = 1; i <= 16; ++i)
 	{
 		C[i] = rotate_left28(C[i - 1], shifts[i - 1]);
 		D[i] = rotate_left28(D[i - 1], shifts[i - 1]);
 	}
 
-	//for (i = 1; i <= 16; ++i)
-	//{
-	//print_bitset(C[i], 28, "C_" + std::to_string(i));
-	//print_bitset(D[i], 28, "D_" + std::to_string(i));
-	//}
+#if PRINT_MAIN
+	for (i = 1; i <= 16; ++i)
+	{
+		print_bitset(C[i], 28, "C_" + std::to_string(i));
+		print_bitset(D[i], 28, "D_" + std::to_string(i));
+	}
+#endif
 
 	std::bitset<48> K[16];
 	for (i = 1; i <= 16; ++i)
@@ -254,10 +276,12 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 		}
 	}
 
-	//for (i = 1; i <= 16; ++i)
-	//{
-	//print_bitset(K[i-1], 48, "K_" + std::to_string(i));
-	//}
+#if PRINT_MAIN
+	for (i = 1; i <= 16; ++i)
+	{
+		print_bitset(K[i-1], 48, "K_" + std::to_string(i));
+	}
+#endif
 
 	//STEP 2: Encode each 64-bit block of data
 
@@ -267,7 +291,9 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 		IP[i] = M[IP_tab[i] - 1];
 	}
 
-	//print_bitset(IP, 64, "IP");
+#if PRINT_MAIN
+	print_bitset(IP, 64, "IP");
+#endif
 
 	std::bitset<32> L[17], R[17];
 	for (i = 0; i < 32; ++i)
@@ -276,15 +302,20 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 		R[0][i] = IP[i + 32];
 	}
 
-	//print_bitset(L[0], 32, "L_0");
-	//print_bitset(R[0], 32, "R_0");
+#if PRINT_MAIN
+	print_bitset(L[0], 32, "L_0");
+	print_bitset(R[0], 32, "R_0");
+#endif
 
 	for (i = 1; i <= 16; ++i)
 	{
 		L[i] = R[i - 1];
 		R[i] = L[i - 1] ^ f(R[i - 1], K[i - 1]);
-		//print_bitset(L[i], 32, "L_" + std::to_string(i));
-		//print_bitset(R[i], 32, "R_" + std::to_string(i));
+
+#if PRINT_MAIN
+		print_bitset(L[i], 32, "L_" + std::to_string(i));
+		print_bitset(R[i], 32, "R_" + std::to_string(i));
+#endif
 	}
 
 	std::bitset<64> R16L16;
@@ -292,7 +323,10 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 	{
 		R16L16[i] = i < 32 ? R[16][i] : L[16][i - 32];
 	}
-	//print_bitset(R16L16, 64, "R_16_L_16");
+
+#if PRINT_MAIN
+	print_bitset(R16L16, 64, "R_16_L_16");
+#endif
 
 	std::bitset<64> result;
 	for (i = 0; i < 64; ++i)
@@ -300,6 +334,9 @@ std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K0)
 		result[i] = R16L16[IPminus[i] - 1];
 	}
 
-	//print_bitset(result, 64, "IP-1");
+#if PRINT_MAIN
+	print_bitset(result, 64, "IP-1");
+#endif
+
 	return result;
 }

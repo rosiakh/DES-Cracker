@@ -1,7 +1,4 @@
 #include <bitset>
-#include <stdint.h>
-#include <iostream>
-#include <bitset>
 #include <string>
 #include <iostream>
 #include <stdint.h>
@@ -21,7 +18,7 @@ inline std::bitset<28> rotate_right28(std::bitset<28> b, unsigned m);
 std::bitset<64> encrypt(std::bitset<64> M, std::bitset<64> K);
 
 //uint64_t
-void print_uint64_t(uint64_t bits, uint32_t pos, std::string label);
+void print_uint64_t(uint64_t bits, uint32_t pos, std::string label, uint32_t space = 4);
 
 inline uint64_t rotate_left_28(uint64_t bits, uint32_t pos);
 
