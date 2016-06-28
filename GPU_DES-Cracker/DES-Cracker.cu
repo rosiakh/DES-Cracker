@@ -1,6 +1,6 @@
-#include "DES-Cracker.h"
+#include "DES-Cracker.cuh"
 
-const int E[48] = {
+static __device__ __constant__ int E[48] = {
 	32, 1, 2, 3, 4, 5,
 	4, 5, 6, 7, 8, 9,
 	8, 9, 10, 11, 12, 13,
@@ -11,7 +11,7 @@ const int E[48] = {
 	28, 29, 30, 31, 32, 1
 };
 
-const int P[32] = {
+static __device__ __constant__ int P[32] = {
 	16, 7, 20, 21,
 	29, 12, 28, 17,
 	1, 5, 23, 26,
@@ -22,7 +22,7 @@ const int P[32] = {
 	22, 11, 4, 25
 };
 
-const unsigned long S[8][4][16] = {
+static __device__ __constant__ unsigned long S[8][4][16] = {
 	{
 		{ 14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7 },
 		{ 0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8 },
@@ -73,7 +73,7 @@ const unsigned long S[8][4][16] = {
 	}
 };
 
-const int IP_tab[64] = {
+static __device__ __constant__ int IP_tab[64] = {
 	58, 50, 42, 34, 26, 18, 10, 2,
 	60, 52, 44, 36, 28, 20, 12, 4,
 	62, 54, 46, 38, 30, 22, 14, 6,
@@ -84,7 +84,7 @@ const int IP_tab[64] = {
 	63, 55, 47, 39, 31, 23, 15, 7
 };
 
-const int IPminus[64] = {
+static __device__ __constant__ int IPminus[64] = {
 	40, 8, 48, 16, 56, 24, 64, 32,
 	39, 7, 47, 15, 55, 23, 63, 31,
 	38, 6, 46, 14, 54, 22, 62, 30,
@@ -95,7 +95,7 @@ const int IPminus[64] = {
 	33, 1, 41, 9, 49, 17, 57, 25
 };
 
-const int PC1[56] = {
+static __device__ __constant__ int PC1[56] = {
 	57, 49, 41, 33, 25, 17, 9,
 	1, 58, 50, 42, 34, 26, 18,
 	10, 2, 59, 51, 43, 35, 27,
@@ -106,7 +106,7 @@ const int PC1[56] = {
 	21, 13, 5, 28, 20, 12, 4
 };
 
-const int PC2[48] = {
+static __device__ __constant__ int PC2[48] = {
 	14, 17, 11, 24, 1, 5,
 	3, 28, 15, 6, 21, 10,
 	23, 19, 12, 4, 26, 8,
@@ -117,37 +117,26 @@ const int PC2[48] = {
 	46, 42, 50, 36, 29, 32
 };
 
-const int shifts[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1 };
+static __device__ __constant__ int shifts[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1 };
 
-//print bits in positions from 1 to pos
-void print_uint64_t(uint64_t bits, uint32_t pos, std::string label)
-{
-	std::cout << label << ": ";
-	for (int i = 1; i <= pos; ++i)
-	{
-		std::cout << get_bit(bits, i);
-	}
-	std::cout << std::endl;
-}
-
-inline uint64_t rotate_left_28(uint64_t bits, uint32_t pos)
+ __device__ uint64_t rotate_left_28(uint64_t bits, uint32_t pos)
 {
 	return bits >> (28 - pos) | bits << pos;
 }
 
-inline uint64_t rotate_right_28(uint64_t bits, uint32_t pos)
+ __device__ uint64_t rotate_right_28(uint64_t bits, uint32_t pos)
 {
 	return bits << (28 - pos) | bits >> pos;
 }
 
 //first bit on the left is on position 1
-inline uint32_t get_bit(uint64_t bits, uint32_t pos)
+ __device__ uint32_t get_bit(uint64_t bits, uint32_t pos)
 {
 	return (bits >> (64 - pos)) & 0x01;
 }
 
 //first bit on the left is on position 1
-inline uint64_t set_bit(uint64_t& bits, uint32_t pos, uint32_t value)
+ __device__ uint64_t set_bit(uint64_t& bits, uint32_t pos, uint32_t value)
 {
 	uint64_t mask = 1LL << (64 - pos);
 	if (value)
@@ -157,7 +146,7 @@ inline uint64_t set_bit(uint64_t& bits, uint32_t pos, uint32_t value)
 	return bits;
 }
 
-inline uint64_t f(uint64_t data, uint64_t key)
+ __device__ uint64_t f(uint64_t data, uint64_t key)
 {
 	int i, j;
 	uint64_t E_data = 0LL;
@@ -226,110 +215,92 @@ inline uint64_t f(uint64_t data, uint64_t key)
 	return f_res;
 }
 
-//M - plaintext; K - key
-uint64_t encrypt(uint64_t M, uint64_t K0)
-{
-	//STEP 1: Create 16 subkeys, each of which is 48-bits long
+ __device__ uint64_t encrypt(uint64_t M, uint64_t K0)
+ {
+	 //STEP 1: Create 16 subkeys, each of which is 48-bits long
 
-	//print_uint64_t(K0, 64, "Key");
+	 int i, b;
+	 uint64_t Kplus = 0LL;
+	 for (i = 1; i <= 56; ++i)
+	 {
+		 set_bit(Kplus, i, get_bit(K0, PC1[i - 1]));
+	 }
 
-	int i, b;
-	uint64_t Kplus = 0LL;
-	for (i = 1; i <= 56; ++i)
-	{
-		set_bit(Kplus, i, get_bit(K0, PC1[i - 1]));
-	}
+	 uint64_t C[17], D[17];
 
-	//print_uint64_t(Kplus, 56, "K+");
+	 C[0] = 0LL;
+	 D[0] = 0LL;
+	 for (i = 1; i <= 28; ++i)
+	 {
+		 set_bit(C[0], i, get_bit(Kplus, i));
+		 set_bit(D[0], i, get_bit(Kplus, 28 + i));
+	 }
 
-	uint64_t C[17], D[17];
+	 for (i = 1; i <= 16; ++i)
+	 {
+		 C[i] = 0LL;
+		 D[i] = 0LL;
+		 C[i] = rotate_left_28(C[i - 1], shifts[i - 1]);
+		 D[i] = rotate_left_28(D[i - 1], shifts[i - 1]);
+	 }
 
-	C[0] = 0LL;
-	D[0] = 0LL;
-	for (i = 1; i <= 28; ++i)
-	{
-		set_bit(C[0], i, get_bit(Kplus, i));
-		set_bit(D[0], i, get_bit(Kplus, 28 + i));
-	}
+	 uint64_t K[16];
+	 for (i = 1; i <= 16; ++i)
+	 {
+		 K[i - 1] = 0LL;
+		 for (b = 1; b <= 48; ++b)
+		 {
+			 set_bit(K[i - 1], b, PC2[b - 1] > 28 ? get_bit(D[i], PC2[b - 1] - 28) : get_bit(C[i], PC2[b - 1]));
+		 }
+	 }
 
-	for (i = 1; i <= 16; ++i)
-	{
-		C[i] = 0LL;
-		D[i] = 0LL;
-		C[i] = rotate_left_28(C[i - 1], shifts[i - 1]);
-		D[i] = rotate_left_28(D[i - 1], shifts[i - 1]);
-	}
+	 uint64_t IP = 0LL;
+	 for (i = 1; i <= 64; ++i)
+	 {
+		 set_bit(IP, i, get_bit(M, IP_tab[i - 1]));
+	 }
 
-	/*for (i = 0; i <= 16; ++i)
-	{
-	print_uint64_t(C[i], 28, "C_" + std::to_string(i));
-	}
+	 uint64_t L[17], R[17];
+	 L[0] = 0LL;
+	 R[0] = 0LL;
+	 for (i = 1; i <= 32; ++i)
+	 {
+		 set_bit(L[0], i, get_bit(IP, i));
+		 set_bit(R[0], i, get_bit(IP, 32 + i));
+	 }
 
-	for (i = 0; i <= 16; ++i)
-	{
-	print_uint64_t(D[i], 28, "D_" + std::to_string(i));
-	}*/
+	 for (i = 1; i <= 16; ++i)
+	 {
+		 L[i] = 0LL;
+		 R[i] = 0LL;
+		 L[i] = R[i - 1];
+		 R[i] = L[i - 1] ^ f(R[i - 1], K[i - 1]);
+	 }
 
-	uint64_t K[16];
-	for (i = 1; i <= 16; ++i)
-	{
-		K[i - 1] = 0LL;
-		for (b = 1; b <= 48; ++b)
-		{
-			set_bit(K[i - 1], b, PC2[b - 1] > 28 ? get_bit(D[i], PC2[b - 1] - 28) : get_bit(C[i], PC2[b - 1]));
-		}
-	}
+	 uint64_t R16L16 = 0LL;
+	 for (i = 1; i <= 64; ++i)
+	 {
+		 set_bit(R16L16, i, i <= 32 ? get_bit(R[16], i) : get_bit(L[16], i - 32));
+	 }
 
-	/*for (i = 1; i <= 16; ++i)
-	{
-	print_uint64_t(K[i - 1], 48, "K_" + std::to_string(i));
-	}*/
+	 uint64_t result = 0LL;
+	 for (i = 1; i <= 64; ++i)
+	 {
+		 set_bit(result, i, get_bit(R16L16, IPminus[i - 1]));
+	 }
 
-	//STEP 2: Encode each 64-bit block of data
+	 return result;
+ }
 
-	uint64_t IP = 0LL;
-	for (i = 1; i <= 64; ++i)
-	{
-		set_bit(IP, i, get_bit(M, IP_tab[i - 1]));
-	}
+ __global__ void check_keys(uint64_t plaintext, uint64_t base_key, uint64_t ciphertext, uint64_t *result, bool *is_found_key)
+ {
+	 int tid = blockDim.x * blockIdx.x + threadIdx.x;
+	 uint64_t try_key = base_key + tid;
+	 uint64_t try_ciphertext = encrypt(plaintext, try_key);
 
-	//print_uint64_t(IP, 64, "IP");
-
-	uint64_t L[17], R[17];
-	L[0] = 0LL;
-	R[0] = 0LL;
-	for (i = 1; i <= 32; ++i)
-	{
-		set_bit(L[0], i, get_bit(IP, i));
-		set_bit(R[0], i, get_bit(IP, 32 + i));
-	}
-
-	//print_uint64_t(L[0], 32, "L_0");
-	//print_uint64_t(R[0], 32, "R_0");
-
-	for (i = 1; i <= 16; ++i)
-	{
-		L[i] = 0LL;
-		R[i] = 0LL;
-		L[i] = R[i - 1];
-		R[i] = L[i - 1] ^ f(R[i - 1], K[i - 1]);
-		//print_uint64_t(L[i], 32, "L_" + std::to_string(i));
-		//print_uint64_t(R[i], 32, "R_" + std::to_string(i));
-	}
-
-	uint64_t R16L16 = 0LL;
-	for (i = 1; i <= 64; ++i)
-	{
-		set_bit(R16L16, i, i <= 32 ? get_bit(R[16], i) : get_bit(L[16], i - 32));
-	}
-	//print_uint64_t(R16L16, 64, "R_16_L_16");
-
-	uint64_t result = 0LL;
-	for (i = 1; i <= 64; ++i)
-	{
-		set_bit(result, i, get_bit(R16L16, IPminus[i - 1]));
-	}
-
-	//print_uint64_t(result, 64, "IP-1");
-	return result;
-}
+	 if (try_ciphertext == ciphertext)
+	 {
+		 *is_found_key = true;
+		 *result = try_key;
+	 }
+ }

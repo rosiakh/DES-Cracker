@@ -28,10 +28,10 @@ inline uint64_t rotate_left_28(uint64_t bits, uint32_t pos);
 inline uint64_t rotate_right_28(uint64_t bits, uint32_t pos);
 
 //first bit on the left is on position 1
-uint32_t get_bit(uint64_t bits, uint32_t pos);
+inline uint32_t get_bit(uint64_t bits, uint32_t pos);
 
 //first bit on the left is on position 1
-uint64_t set_bit(uint64_t& bits, uint32_t pos, uint32_t value);
+inline uint64_t set_bit(uint64_t& bits, uint32_t pos, uint32_t value);
 
 uint64_t encrypt(uint64_t M, uint64_t K0);
 
