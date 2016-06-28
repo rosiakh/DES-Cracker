@@ -243,8 +243,9 @@ inline uint64_t f(uint64_t data, uint64_t key)
 	return f_res;
 }
 
+//without initial and final permutation
 //M - plaintext; K - key
-uint64_t encrypt(uint64_t M, uint64_t K0)
+uint64_t encrypt_no_permutations(uint64_t M, uint64_t K0)
 {
 	//STEP 1: Create 16 subkeys, each of which is 48-bits long
 
@@ -308,23 +309,13 @@ uint64_t encrypt(uint64_t M, uint64_t K0)
 
 	//STEP 2: Encode each 64-bit block of data
 
-	uint64_t IP = 0LL;
-	for (i = 1; i <= 64; ++i)
-	{
-		set_bit(IP, i, get_bit(M, IP_tab[i - 1]));
-	}
-
-#if PRINT_MAIN
-	print_uint64_t(IP, 64, "IP", 4);
-#endif
-
 	uint64_t L[17], R[17];
 	L[0] = 0LL;
 	R[0] = 0LL;
 	for (i = 1; i <= 32; ++i)
 	{
-		set_bit(L[0], i, get_bit(IP, i));
-		set_bit(R[0], i, get_bit(IP, 32 + i));
+		set_bit(L[0], i, get_bit(M, i));
+		set_bit(R[0], i, get_bit(M, 32 + i));
 	}
 
 #if PRINT_MAIN
@@ -355,6 +346,24 @@ uint64_t encrypt(uint64_t M, uint64_t K0)
 	print_uint64_t(R16L16, 64, "R_16_L_16", 8);
 #endif
 
+	return R16L16;
+}
+
+//M - plaintext; K - key
+uint64_t encrypt(uint64_t M, uint64_t K0)
+{
+	int i;
+	uint64_t IP = 0LL;
+	for (i = 1; i <= 64; ++i)
+	{
+		set_bit(IP, i, get_bit(M, IP_tab[i - 1]));
+	}
+
+#if PRINT_MAIN
+	print_uint64_t(IP, 64, "IP", 4);
+#endif
+
+	uint64_t R16L16 = encrypt_no_permutations(IP, K0);
 	uint64_t result = 0LL;
 	for (i = 1; i <= 64; ++i)
 	{

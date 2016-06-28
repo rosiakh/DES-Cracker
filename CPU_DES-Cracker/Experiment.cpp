@@ -45,7 +45,7 @@ void parallel_uint64_t_version(std::string plaintext_string, std::string key_str
 	uint64_t plaintext = strtoll(plaintext_string.c_str(), nullptr, 2);
 	uint64_t key = strtoll(key_string.c_str(), nullptr, 2);
 	uint64_t ciphertext = encrypt(plaintext, key);
-
+	
 	uint64_t try_key = 0LL;
 	uint64_t keys_tried = 0LL;
 

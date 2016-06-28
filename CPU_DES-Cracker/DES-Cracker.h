@@ -32,6 +32,8 @@ inline uint64_t set_bit(uint64_t& bits, uint32_t pos, uint32_t value);
 
 uint64_t encrypt(uint64_t M, uint64_t K0);
 
+uint64_t encrypt_no_permutations(uint64_t M, uint64_t K0);
+
 //Experiment
 void sequential_uint64_t_version(std::string plaintext_string, std::string key_string);
 
